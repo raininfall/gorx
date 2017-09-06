@@ -1,4 +1,4 @@
-package rx
+package observer
 
 /*Observer is n interface for a consumer of push-based notifications delivered by an Observable.*/
 type Observer interface {
@@ -8,12 +8,24 @@ type Observer interface {
 	Complete()
 }
 
+/*IsClosedFunc Observer interface func*/
+type IsClosedFunc func() bool
+
+/*NextFunc Observer interface func*/
+type NextFunc func(interface{})
+
+/*ErrorFunc Observer interface func*/
+type ErrorFunc func(error)
+
+/*CompleteFunc Observer interface func*/
+type CompleteFunc func()
+
 type observer struct {
 	closed   bool
-	isClosed ObserverIsClosedFunc
-	next     ObserverNextFunc
-	err      ObserverErrorFunc
-	complete ObserverCompleteFunc
+	isClosed IsClosedFunc
+	next     NextFunc
+	err      ErrorFunc
+	complete CompleteFunc
 }
 
 var defaultObserver = observer{
@@ -39,18 +51,18 @@ func (ob *observer) Complete() {
 	ob.complete()
 }
 
-/*CreateObserver return default implement of Observer*/
-func CreateObserver(fns ...interface{}) Observer {
+/*New return default implement of Observer*/
+func New(fns ...interface{}) Observer {
 	ob := defaultObserver
 	for _, fn := range fns {
 		switch fn := fn.(type) {
-		case ObserverIsClosedFunc:
+		case IsClosedFunc:
 			ob.isClosed = fn
-		case ObserverNextFunc:
+		case NextFunc:
 			ob.next = fn
-		case ObserverErrorFunc:
+		case ErrorFunc:
 			ob.err = fn
-		case ObserverCompleteFunc:
+		case CompleteFunc:
 			ob.complete = fn
 		}
 	}

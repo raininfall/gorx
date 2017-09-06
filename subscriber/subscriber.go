@@ -1,22 +1,28 @@
-package rx
+package subscriber
+
+import (
+	"github.com/raininfall/gorx/observer"
+	"github.com/raininfall/gorx/subscription"
+	"github.com/raininfall/gorx/teardown-logic"
+)
 
 /*Subscriber Implements the Observer interface and the Subscription interface*/
 type Subscriber interface {
-	Add(TeardownLogic)
-	Remove(Subscription)
+	Add(teardownLogic.TeardownLogic)
+	Remove(subscription.Subscription)
 	Unsubscribe()
-	Observer
+	observer.Observer
 }
 
 type subscriber struct {
-	subscription Subscription
-	observer     Observer
+	subscription subscription.Subscription
+	observer     observer.Observer
 }
 
-/*CreateSubscriber return instance Subscriber*/
-func CreateSubscriber(observer Observer) Subscriber {
+/*New return instance Subscriber*/
+func New(observer observer.Observer) Subscriber {
 	return &subscriber{
-		subscription: CreateSubscription(nil),
+		subscription: subscription.New(nil),
 		observer:     observer,
 	}
 }
@@ -25,11 +31,11 @@ func (s *subscriber) IsClosed() bool {
 	return s.subscription.IsClosed()
 }
 
-func (s *subscriber) Add(tl TeardownLogic) {
+func (s *subscriber) Add(tl teardownLogic.TeardownLogic) {
 	s.subscription.Add(tl)
 }
 
-func (s *subscriber) Remove(sub Subscription) {
+func (s *subscriber) Remove(sub subscription.Subscription) {
 	s.subscription.Remove(sub)
 }
 

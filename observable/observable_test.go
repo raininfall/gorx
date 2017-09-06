@@ -1,10 +1,12 @@
-package rx
+package observable
 
 import (
 	"errors"
 	"sync"
 	"testing"
 
+	"github.com/raininfall/gorx/observer"
+	"github.com/raininfall/gorx/subscriber"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,21 +17,21 @@ func TestObservableComplete(t *testing.T) {
 	values := []int{}
 	fin := &sync.WaitGroup{}
 
-	nextFn := ObserverNextFunc(func(value interface{}) {
+	nextFn := observer.NextFunc(func(value interface{}) {
 		values = append(values, value.(int))
 	})
-	doneFn := ObserverCompleteFunc(func() {
+	doneFn := observer.CompleteFunc(func() {
 		done = "Yes"
 		fin.Done()
 	})
-	errFn := ObserverErrorFunc(func(errOut error) {
+	errFn := observer.ErrorFunc(func(errOut error) {
 		err = errOut
 	})
 
-	obOut := CreateObserver(nextFn, doneFn, errFn)
-	sub := CreateSubscriber(obOut)
+	obOut := observer.New(nextFn, doneFn, errFn)
+	sub := subscriber.New(obOut)
 
-	ob, obIn := CreateObservable(nil)
+	ob, obIn := New(nil)
 
 	ob.Subscribe(sub)
 
@@ -54,22 +56,22 @@ func TestObservableError(t *testing.T) {
 	values := []int{}
 	fin := &sync.WaitGroup{}
 
-	nextFn := ObserverNextFunc(func(value interface{}) {
+	nextFn := observer.NextFunc(func(value interface{}) {
 		values = append(values, value.(int))
 	})
-	errFn := ObserverErrorFunc(func(errOut error) {
+	errFn := observer.ErrorFunc(func(errOut error) {
 		err = errOut
 		fin.Done()
 	})
-	doneFn := ObserverCompleteFunc(func() {
+	doneFn := observer.CompleteFunc(func() {
 		done = "Yes"
 		fin.Done()
 	})
 
-	obOut := CreateObserver(nextFn, errFn, doneFn)
-	sub := CreateSubscriber(obOut)
+	obOut := observer.New(nextFn, errFn, doneFn)
+	sub := subscriber.New(obOut)
 
-	ob, obIn := CreateObservable(nil)
+	ob, obIn := New(nil)
 
 	ob.Subscribe(sub)
 

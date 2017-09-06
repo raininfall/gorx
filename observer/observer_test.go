@@ -1,4 +1,4 @@
-package rx
+package observer
 
 import (
 	"errors"
@@ -14,13 +14,13 @@ func TestObserver(t *testing.T) {
 	errSet := errors.New("Done")
 	done := "Not"
 
-	nextFn := ObserverNextFunc(func(value interface{}) {
+	nextFn := NextFunc(func(value interface{}) {
 		all = append(all, value.(int))
 	})
-	errorFn := ObserverErrorFunc(func(err error) {
+	errorFn := ErrorFunc(func(err error) {
 		errGot = err
 	})
-	doneFn := ObserverCompleteFunc(func() {
+	doneFn := CompleteFunc(func() {
 		done = "Done"
 	})
 

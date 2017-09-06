@@ -6,6 +6,7 @@
         "rxgo",
         "gorx",
         "dylib",
-        "stretchr"
+        "stretchr",
+        "raininfall"
     ]
 }

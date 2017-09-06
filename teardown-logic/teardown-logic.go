@@ -1,4 +1,4 @@
-package rx
+package teardownLogic
 
 /*TeardownLogic will be used to cancel subscription for given Observable*/
 type TeardownLogic func()

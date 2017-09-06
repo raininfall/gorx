@@ -1,10 +1,14 @@
-package rx
+package observable
 
-/*Same package*/
+import (
+	"github.com/raininfall/gorx/observer"
+	"github.com/raininfall/gorx/subscriber"
+	"github.com/raininfall/gorx/teardown-logic"
+)
 
 /*Observable is representation of any set of values over any amount of time*/
 type Observable interface {
-	Subscribe(Subscriber)
+	Subscribe(subscriber.Subscriber)
 }
 
 type observable struct {
@@ -47,8 +51,8 @@ func (observer *observerToObservable) close() {
 	observer.closed = true
 }
 
-/*CreateObservable will create a new Observable, that will execute the specified function when an Observer subscribes to it*/
-func CreateObservable(tl TeardownLogic) (Observable, Observer) {
+/*New will create a new Observable, that will execute the specified function when an Observer subscribes to it*/
+func New(tl teardownLogic.TeardownLogic) (Observable, observer.Observer) {
 	next := make(chan interface{})
 
 	return &observable{
@@ -59,7 +63,7 @@ func CreateObservable(tl TeardownLogic) (Observable, Observer) {
 		}
 }
 
-func (observable *observable) Subscribe(subscriber Subscriber) {
+func (observable *observable) Subscribe(subscriber subscriber.Subscriber) {
 	go func() {
 		for item := range observable.next {
 			if subscriber.IsClosed() {

@@ -1,12 +1,19 @@
-package rx
+package subscription
+
+import (
+	"github.com/raininfall/gorx/teardown-logic"
+)
 
 /*Subscription represents a disposable resource, such as the execution of an Observable.*/
 type Subscription interface {
 	IsClosed() bool
-	Add(TeardownLogic) Subscription
+	Add(teardownLogic.TeardownLogic) Subscription
 	Remove(Subscription)
 	Unsubscribe()
 }
+
+/*UnsubscribeFunc will be called when observer unsubscribe*/
+type UnsubscribeFunc func()
 
 type subscription struct {
 	closed      bool
@@ -14,8 +21,8 @@ type subscription struct {
 	tearDowns   []Subscription
 }
 
-/*CreateSubscription return instance of Subscription*/
-func CreateSubscription(unsubscribe UnsubscribeFunc) Subscription {
+/*New return instance of Subscription*/
+func New(unsubscribe UnsubscribeFunc) Subscription {
 	return &subscription{
 		unsubscribe: unsubscribe,
 	}
@@ -25,8 +32,8 @@ func (s *subscription) IsClosed() bool {
 	return s.closed
 }
 
-func (s *subscription) Add(tl TeardownLogic) Subscription {
-	sub := CreateSubscription(UnsubscribeFunc(tl))
+func (s *subscription) Add(tl teardownLogic.TeardownLogic) Subscription {
+	sub := New(UnsubscribeFunc(tl))
 	s.tearDowns = append(s.tearDowns, sub)
 	return sub
 }
