@@ -12,30 +12,51 @@ type observable struct {
 }
 
 type observerToObservable struct {
-	to     chan<- interface{}
 	closed bool
+	next   chan<- interface{}
 }
 
 func (observer *observerToObservable) IsClosed() bool {
 	return observer.closed
 }
 
-func (observer *observerToObservable) Next(interface{}) {
-
+func (observer *observerToObservable) Next(value interface{}) {
+	if observer.closed {
+		return
+	}
+	observer.next <- value
 }
 
-func (observer *observerToObservable) Error(error) {
-
+func (observer *observerToObservable) Error(err error) {
+	if observer.closed {
+		return
+	}
+	observer.next <- err
+	observer.close()
 }
 
 func (observer *observerToObservable) Complete() {
-
+	if observer.closed {
+		return
+	}
+	observer.close()
 }
 
-/*Create a new Observable, that will execute the specified function when an Observer subscribes to it*/
-func Create(tl TeardownLogic) (Observable, Observer) {
+func (observer *observerToObservable) close() {
+	close(observer.next)
+	observer.closed = true
+}
 
-	return nil, nil
+/*CreateObservable will create a new Observable, that will execute the specified function when an Observer subscribes to it*/
+func CreateObservable(tl TeardownLogic) (Observable, Observer) {
+	next := make(chan interface{})
+
+	return &observable{
+			next: next,
+		}, &observerToObservable{
+			closed: false,
+			next:   next,
+		}
 }
 
 func (observable *observable) Subscribe(subscriber Subscriber) {
