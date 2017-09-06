@@ -9,4 +9,6 @@ type (
 	ObserverErrorFunc func(error)
 	/*ObserverCompleteFunc Observer interface func*/
 	ObserverCompleteFunc func()
+	/*UnsubscribeFunc call when unsubscribe*/
+	UnsubscribeFunc func()
 )

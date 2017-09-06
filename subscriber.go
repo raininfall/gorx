@@ -13,6 +13,14 @@ type subscriber struct {
 	observer     Observer
 }
 
+/*CreateSubscriber return instance Subscriber*/
+func CreateSubscriber(observer Observer) Subscriber {
+	return &subscriber{
+		subscription: CreateSubscription(nil),
+		observer:     observer,
+	}
+}
+
 func (s *subscriber) IsClosed() bool {
 	return s.subscription.IsClosed()
 }

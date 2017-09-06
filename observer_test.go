@@ -9,13 +9,13 @@ import (
 
 func TestObserver(t *testing.T) {
 	assert := assert.New(t)
-	nums := []int{}
+	all := []int{}
 	var errGot error
 	errSet := errors.New("Done")
 	done := "Not"
 
 	nextFn := ObserverNextFunc(func(value interface{}) {
-		nums = append(nums, value.(int))
+		all = append(all, value.(int))
 	})
 	errorFn := ObserverErrorFunc(func(err error) {
 		errGot = err
@@ -32,7 +32,7 @@ func TestObserver(t *testing.T) {
 	ob.Error(errSet)
 	ob.Complete()
 
-	assert.Exactly([]int{1, 2, 3}, nums)
+	assert.Exactly([]int{1, 2, 3}, all)
 	assert.Exactly(errGot, errSet)
 	assert.Exactly(done, "Done")
 }

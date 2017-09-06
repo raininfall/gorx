@@ -5,6 +5,7 @@
         "rx",
         "rxgo",
         "gorx",
-        "dylib"
+        "dylib",
+        "stretchr"
     ]
 }
