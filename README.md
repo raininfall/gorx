@@ -1,2 +1,2 @@
 # gorx
-implement reactivex ingo
+implement reactivex in go
