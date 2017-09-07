@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/raininfall/gorx/observer"
 	"github.com/raininfall/gorx/subscriber"
@@ -31,6 +32,7 @@ func TestObservableComplete(t *testing.T) {
 	obOut := observer.New(nextFn, doneFn, errFn)
 	sub := subscriber.New(obOut)
 
+	fin.Add(1)
 	ob, obIn := New(nil)
 
 	ob.Subscribe(sub)
@@ -38,7 +40,7 @@ func TestObservableComplete(t *testing.T) {
 	obIn.Next(1)
 	obIn.Next(2)
 	obIn.Next(3)
-	fin.Add(1)
+
 	obIn.Complete()
 	obIn.Error(errors.New("One"))
 	fin.Wait()
@@ -71,6 +73,7 @@ func TestObservableError(t *testing.T) {
 	obOut := observer.New(nextFn, errFn, doneFn)
 	sub := subscriber.New(obOut)
 
+	fin.Add(1)
 	ob, obIn := New(nil)
 
 	ob.Subscribe(sub)
@@ -78,12 +81,56 @@ func TestObservableError(t *testing.T) {
 	obIn.Next(1)
 	obIn.Next(2)
 	obIn.Next(3)
-	fin.Add(1)
 	obIn.Error(errors.New("One"))
+
 	fin.Wait()
 
 	assert.Exactly(values, []int{1, 2, 3})
 	assert.Exactly(err.Error(), "One")
 	assert.Exactly(done, "Not")
 	assert.Exactly(obIn.IsClosed(), true)
+}
+
+func TestObservableUnsubscribe(t *testing.T) {
+	assert := assert.New(t)
+	err := errors.New("None")
+	done := "Not"
+	values := []int{}
+	fin := &sync.WaitGroup{}
+
+	nextFn := observer.NextFunc(func(value interface{}) {
+		values = append(values, value.(int))
+	})
+	errFn := observer.ErrorFunc(func(errOut error) {
+		err = errOut
+	})
+	doneFn := observer.CompleteFunc(func() {
+		done = "Yes"
+	})
+
+	obOut := observer.New(nextFn, errFn, doneFn)
+	sub := subscriber.New(obOut)
+
+	ob, obIn := New(nil)
+
+	ob.Subscribe(sub)
+
+	fin.Add(1)
+	go func() {
+		obIn.Next(1)
+		obIn.Next(2)
+		<-time.After(10 * time.Millisecond) /*wait next func called*/
+		sub.Unsubscribe()
+		obIn.Next(3)
+		fin.Done()
+	}()
+
+	<-time.After(500 * time.Millisecond) /*wait if complete or error called in observer*/
+
+	fin.Wait()
+
+	assert.Exactly(values, []int{1, 2})
+	assert.Exactly(err.Error(), "None")
+	assert.Exactly(done, "Not")
+	assert.Exactly(obIn.IsClosed(), false)
 }

@@ -1,6 +1,8 @@
 package observable
 
 import (
+	"time"
+
 	"github.com/raininfall/gorx/observer"
 	"github.com/raininfall/gorx/subscriber"
 	"github.com/raininfall/gorx/teardown-logic"
@@ -67,7 +69,8 @@ func (observable *observable) Subscribe(subscriber subscriber.Subscriber) {
 	go func() {
 		for item := range observable.next {
 			if subscriber.IsClosed() {
-				break
+				/*Unsubscribe process will come here, do not complete the observer*/
+				return
 			}
 			switch item := item.(type) {
 			case error:
@@ -77,6 +80,20 @@ func (observable *observable) Subscribe(subscriber subscriber.Subscriber) {
 				subscriber.Next(item)
 			}
 		}
+		/*Channel close means observable is complete, call observer complete*/
 		subscriber.Complete()
 	}()
+}
+
+/*Interval will emit every \a d time*/
+func Interval(d time.Duration) Observable {
+	observable, observer := New(nil)
+	go func() {
+		ticker := time.NewTicker(d)
+		for i := 0; !observer.IsClosed(); i++ {
+			<-ticker.C
+			observer.Next(i)
+		}
+	}()
+	return observable
 }
