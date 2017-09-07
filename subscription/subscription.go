@@ -16,7 +16,7 @@ type Subscription interface {
 type UnsubscribeFunc func()
 
 type subscription struct {
-	closed      bool
+	closed      bool //TODO: multi thread safety,volatile?
 	unsubscribe UnsubscribeFunc
 	tearDowns   []Subscription
 }
@@ -47,6 +47,9 @@ func (s *subscription) Remove(sub Subscription) {
 }
 
 func (s *subscription) Unsubscribe() {
+	if s.closed {
+		return /*Only cleanup once*/
+	}
 	if s.unsubscribe != nil {
 		s.unsubscribe()
 	}

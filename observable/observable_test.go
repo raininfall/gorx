@@ -35,7 +35,7 @@ func TestObservableComplete(t *testing.T) {
 	fin.Add(1)
 	ob, obIn := New(nil)
 
-	ob.Subscribe(sub)
+	assert.Nil(ob.Subscribe(sub))
 
 	obIn.Next(1)
 	obIn.Next(2)
@@ -76,7 +76,7 @@ func TestObservableError(t *testing.T) {
 	fin.Add(1)
 	ob, obIn := New(nil)
 
-	ob.Subscribe(sub)
+	assert.Nil(ob.Subscribe(sub))
 
 	obIn.Next(1)
 	obIn.Next(2)
@@ -103,9 +103,11 @@ func TestObservableUnsubscribe(t *testing.T) {
 	})
 	errFn := observer.ErrorFunc(func(errOut error) {
 		err = errOut
+		t.Fatal("Should not call error")
 	})
 	doneFn := observer.CompleteFunc(func() {
 		done = "Yes"
+		t.Fatal("Should not call complete")
 	})
 
 	obOut := observer.New(nextFn, errFn, doneFn)
@@ -113,7 +115,7 @@ func TestObservableUnsubscribe(t *testing.T) {
 
 	ob, obIn := New(nil)
 
-	ob.Subscribe(sub)
+	assert.Nil(ob.Subscribe(sub))
 
 	fin.Add(1)
 	go func() {
@@ -121,16 +123,40 @@ func TestObservableUnsubscribe(t *testing.T) {
 		obIn.Next(2)
 		<-time.After(10 * time.Millisecond) /*wait next func called*/
 		sub.Unsubscribe()
-		obIn.Next(3)
 		fin.Done()
 	}()
 
-	<-time.After(500 * time.Millisecond) /*wait if complete or error called in observer*/
-
+	<-time.After(500 * time.Millisecond) /*wait observer all func called*/
 	fin.Wait()
 
 	assert.Exactly(values, []int{1, 2})
 	assert.Exactly(err.Error(), "None")
 	assert.Exactly(done, "Not")
 	assert.Exactly(obIn.IsClosed(), false)
+}
+
+func TestObservableInterval(t *testing.T) {
+	assert := assert.New(t)
+	err := errors.New("None")
+	done := "Not"
+	values := []int{}
+
+	nextFn := observer.NextFunc(func(value interface{}) {
+		values = append(values, value.(int))
+	})
+	errFn := observer.ErrorFunc(func(errOut error) {
+		err = errOut
+	})
+	doneFn := observer.CompleteFunc(func() {
+		done = "Yes"
+	})
+
+	obOut := observer.New(nextFn, errFn, doneFn)
+	sub := subscriber.New(obOut)
+	Interval(100 * time.Millisecond).Subscribe(sub)
+	<-time.After(450 * time.Millisecond)
+
+	assert.Exactly(values, []int{0, 1, 2, 3})
+	assert.Exactly(err.Error(), "None")
+	assert.Exactly(done, "Not")
 }

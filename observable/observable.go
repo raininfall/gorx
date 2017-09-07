@@ -10,7 +10,7 @@ import (
 
 /*Observable is representation of any set of values over any amount of time*/
 type Observable interface {
-	Subscribe(subscriber.Subscriber)
+	Subscribe(subscriber.Subscriber) error
 }
 
 type observable struct {
@@ -65,24 +65,33 @@ func New(tl teardownLogic.TeardownLogic) (Observable, observer.Observer) {
 		}
 }
 
-func (observable *observable) Subscribe(subscriber subscriber.Subscriber) {
+func (observable *observable) Subscribe(subscriber subscriber.Subscriber) error {
+	/*Subscriber is protected for multi-thread outside this func ,it will work only if subscriber called here, not in go routine*/
+	ou := newObservableUnsubscribe()
+	subscriber.Add(ou.notify)
+
 	go func() {
-		for item := range observable.next {
-			if subscriber.IsClosed() {
-				/*Unsubscribe process will come here, do not complete the observer*/
-				return
-			}
-			switch item := item.(type) {
-			case error:
-				subscriber.Error(item)
-				return
-			default:
-				subscriber.Next(item)
+		for !subscriber.IsClosed() {
+			select {
+			case <-ou.wait():
+				return /*Stop because of unsubscribe*/
+			case item, notComplete := <-observable.next:
+				if !notComplete {
+					subscriber.Complete()
+					return /*Stop because of complete*/
+				}
+				switch item := item.(type) {
+				case error:
+					subscriber.Error(item)
+					return /*Stop because of error*/
+				default:
+					subscriber.Next(item)
+				}
 			}
 		}
-		/*Channel close means observable is complete, call observer complete*/
-		subscriber.Complete()
 	}()
+
+	return nil
 }
 
 /*Interval will emit every \a d time*/
@@ -96,4 +105,9 @@ func Interval(d time.Duration) Observable {
 		}
 	}()
 	return observable
+}
+
+/*Zip will combines multiple Observables to create an Observable whose values are calculated from the values, in order, of each of its input Observables.*/
+func Zip(observables ...observable) Observable {
+	return nil
 }
