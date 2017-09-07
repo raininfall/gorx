@@ -25,7 +25,7 @@ func TestObserver(t *testing.T) {
 	})
 
 	/*Mocking observable ops*/
-	ob := CreateObserver(nextFn, errorFn, doneFn)
+	ob := New(nextFn, errorFn, doneFn)
 	ob.Next(1)
 	ob.Next(2)
 	ob.Next(3)
