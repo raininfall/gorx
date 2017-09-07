@@ -8,12 +8,12 @@ type AnonymousSubscription interface {
 	Unsubscribe()
 }
 
-/*CreateTeardownLogicFromFunc convert func to TeardownLogic*/
-func CreateTeardownLogicFromFunc(fn func()) TeardownLogic {
+/*FromFunc convert func to TeardownLogic*/
+func FromFunc(fn func()) TeardownLogic {
 	return fn
 }
 
-/*CreateTeardownLogicFrom convert AnonymousSubscription to TeardownLogic**/
-func CreateTeardownLogicFrom(subscription AnonymousSubscription) TeardownLogic {
+/*FromSubscription convert AnonymousSubscription to TeardownLogic**/
+func FromSubscription(subscription AnonymousSubscription) TeardownLogic {
 	return func() { subscription.Unsubscribe() }
 }

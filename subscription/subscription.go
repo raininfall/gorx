@@ -16,15 +16,15 @@ type Subscription interface {
 type UnsubscribeFunc func()
 
 type subscription struct {
-	closed      bool //TODO: multi thread safety,volatile?
-	unsubscribe UnsubscribeFunc
-	tearDowns   []Subscription
+	closed        bool //TODO: multi thread safety,volatile?
+	teardownLogic teardownLogic.TeardownLogic
+	tearDowns     []Subscription
 }
 
 /*New return instance of Subscription*/
-func New(unsubscribe UnsubscribeFunc) Subscription {
+func New(teardownLogic teardownLogic.TeardownLogic) Subscription {
 	return &subscription{
-		unsubscribe: unsubscribe,
+		teardownLogic: teardownLogic,
 	}
 }
 
@@ -33,7 +33,7 @@ func (s *subscription) IsClosed() bool {
 }
 
 func (s *subscription) Add(tl teardownLogic.TeardownLogic) Subscription {
-	sub := New(UnsubscribeFunc(tl))
+	sub := New(tl)
 	s.tearDowns = append(s.tearDowns, sub)
 	return sub
 }
@@ -50,8 +50,8 @@ func (s *subscription) Unsubscribe() {
 	if s.closed {
 		return /*Only cleanup once*/
 	}
-	if s.unsubscribe != nil {
-		s.unsubscribe()
+	if s.teardownLogic != nil {
+		s.teardownLogic()
 	}
 	for _, td := range s.tearDowns {
 		td.Unsubscribe()

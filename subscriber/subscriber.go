@@ -20,9 +20,9 @@ type subscriber struct {
 }
 
 /*New return instance Subscriber*/
-func New(observer observer.Observer) Subscriber {
+func New(observer observer.Observer, teardownLogic teardownLogic.TeardownLogic) Subscriber {
 	return &subscriber{
-		subscription: subscription.New(nil),
+		subscription: subscription.New(teardownLogic),
 		observer:     observer,
 	}
 }

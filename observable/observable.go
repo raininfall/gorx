@@ -10,11 +10,12 @@ import (
 
 /*Observable is representation of any set of values over any amount of time*/
 type Observable interface {
-	Subscribe(subscriber.Subscriber) error
+	Subscribe(observer observer.Observer) subscriber.Subscriber
 }
 
 type observable struct {
 	next <-chan interface{}
+	tl   teardownLogic.TeardownLogic
 }
 
 type observerToObservable struct {
@@ -48,6 +49,7 @@ func (observer *observerToObservable) Complete() {
 	observer.close()
 }
 
+/*close observable*/
 func (observer *observerToObservable) close() {
 	close(observer.next)
 	observer.closed = true
@@ -59,16 +61,20 @@ func New(tl teardownLogic.TeardownLogic) (Observable, observer.Observer) {
 
 	return &observable{
 			next: next,
+			tl:   tl,
 		}, &observerToObservable{
 			closed: false,
 			next:   next,
 		}
+
 }
 
-func (observable *observable) Subscribe(subscriber subscriber.Subscriber) error {
-	/*Subscriber is protected for multi-thread outside this func ,it will work only if subscriber called here, not in go routine*/
+func (observable *observable) Subscribe(observer observer.Observer) subscriber.Subscriber {
 	ou := newObservableUnsubscribe()
-	subscriber.Add(ou.notify)
+	subscriber := subscriber.New(observer, ou.notify)
+	if observable.tl != nil {
+		subscriber.Add(observable.tl)
+	}
 
 	go func() {
 		for !subscriber.IsClosed() {
@@ -91,19 +97,40 @@ func (observable *observable) Subscribe(subscriber subscriber.Subscriber) error 
 		}
 	}()
 
-	return nil
+	return subscriber
 }
 
-/*Interval will emit every \a d time*/
+/*Interval will emit every \a d time, unavailable when first unsubscribe*/
 func Interval(d time.Duration) Observable {
-	observable, observer := New(nil)
+	ou := newObservableUnsubscribe()
+	observable, observer := New(ou.notify)
 	go func() {
 		ticker := time.NewTicker(d)
-		for i := 0; !observer.IsClosed(); i++ {
-			<-ticker.C
-			observer.Next(i)
+		defer ticker.Stop()
+		for i := 0; !observer.IsClosed(); {
+			select {
+			case <-ou.wait(): /*There will bo no complete or error emit from this observable*/
+				return
+			case <-ticker.C:
+				observer.Next(i)
+				i++
+			}
 		}
 	}()
+
+	return observable
+}
+
+/*Of will emit all values in seq*/
+func Of(items ...interface{}) Observable {
+	observable, observer := New(nil)
+	go func() {
+		for _, item := range items {
+			observer.Next(item)
+		}
+		observer.Complete()
+	}()
+
 	return observable
 }
 

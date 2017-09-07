@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/raininfall/gorx/observer"
-	"github.com/raininfall/gorx/subscriber"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,12 +29,11 @@ func TestObservableComplete(t *testing.T) {
 	})
 
 	obOut := observer.New(nextFn, doneFn, errFn)
-	sub := subscriber.New(obOut)
 
 	fin.Add(1)
 	ob, obIn := New(nil)
 
-	assert.Nil(ob.Subscribe(sub))
+	ob.Subscribe(obOut)
 
 	obIn.Next(1)
 	obIn.Next(2)
@@ -44,6 +42,7 @@ func TestObservableComplete(t *testing.T) {
 	obIn.Complete()
 	obIn.Error(errors.New("One"))
 	fin.Wait()
+	<-time.After(10 * time.Millisecond) /*wait observer all func called*/
 
 	assert.Exactly(values, []int{1, 2, 3})
 	assert.Exactly(done, "Yes")
@@ -71,12 +70,11 @@ func TestObservableError(t *testing.T) {
 	})
 
 	obOut := observer.New(nextFn, errFn, doneFn)
-	sub := subscriber.New(obOut)
 
 	fin.Add(1)
 	ob, obIn := New(nil)
 
-	assert.Nil(ob.Subscribe(sub))
+	ob.Subscribe(obOut)
 
 	obIn.Next(1)
 	obIn.Next(2)
@@ -84,6 +82,7 @@ func TestObservableError(t *testing.T) {
 	obIn.Error(errors.New("One"))
 
 	fin.Wait()
+	<-time.After(10 * time.Millisecond) /*wait observer all func called*/
 
 	assert.Exactly(values, []int{1, 2, 3})
 	assert.Exactly(err.Error(), "One")
@@ -96,7 +95,6 @@ func TestObservableUnsubscribe(t *testing.T) {
 	err := errors.New("None")
 	done := "Not"
 	values := []int{}
-	fin := &sync.WaitGroup{}
 
 	nextFn := observer.NextFunc(func(value interface{}) {
 		values = append(values, value.(int))
@@ -111,23 +109,20 @@ func TestObservableUnsubscribe(t *testing.T) {
 	})
 
 	obOut := observer.New(nextFn, errFn, doneFn)
-	sub := subscriber.New(obOut)
 
 	ob, obIn := New(nil)
 
-	assert.Nil(ob.Subscribe(sub))
+	sub := ob.Subscribe(obOut)
 
+	obIn.Next(1)
+	obIn.Next(2)
+	sub.Unsubscribe()
+	fin := &sync.WaitGroup{}
 	fin.Add(1)
 	go func() {
-		obIn.Next(1)
-		obIn.Next(2)
-		<-time.After(10 * time.Millisecond) /*wait next func called*/
-		sub.Unsubscribe()
-		fin.Done()
+		obIn.Next(3)
 	}()
-
-	<-time.After(500 * time.Millisecond) /*wait observer all func called*/
-	fin.Wait()
+	<-time.After(10 * time.Millisecond) /*wait observer all func called*/
 
 	assert.Exactly(values, []int{1, 2})
 	assert.Exactly(err.Error(), "None")
@@ -152,9 +147,10 @@ func TestObservableInterval(t *testing.T) {
 	})
 
 	obOut := observer.New(nextFn, errFn, doneFn)
-	sub := subscriber.New(obOut)
-	Interval(100 * time.Millisecond).Subscribe(sub)
+	sub := Interval(100 * time.Millisecond).Subscribe(obOut)
 	<-time.After(450 * time.Millisecond)
+	sub.Unsubscribe()
+	<-time.After(150 * time.Millisecond)
 
 	assert.Exactly(values, []int{0, 1, 2, 3})
 	assert.Exactly(err.Error(), "None")

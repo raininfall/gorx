@@ -1,5 +1,6 @@
 package observable
 
+/*Will notify when unsubscribe*/
 type observableUnsubscribe chan int
 
 func newObservableUnsubscribe() observableUnsubscribe {
