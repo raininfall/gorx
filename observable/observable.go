@@ -18,55 +18,14 @@ type observable struct {
 	tl   teardownLogic.TeardownLogic
 }
 
-type observerToObservable struct {
-	closed bool
-	next   chan<- interface{}
-}
-
-func (observer *observerToObservable) IsClosed() bool {
-	return observer.closed
-}
-
-func (observer *observerToObservable) Next(value interface{}) {
-	if observer.closed {
-		return
-	}
-	observer.next <- value
-}
-
-func (observer *observerToObservable) Error(err error) {
-	if observer.closed {
-		return
-	}
-	observer.next <- err
-	observer.close()
-}
-
-func (observer *observerToObservable) Complete() {
-	if observer.closed {
-		return
-	}
-	observer.close()
-}
-
-/*close observable*/
-func (observer *observerToObservable) close() {
-	close(observer.next)
-	observer.closed = true
-}
-
 /*New will create a new Observable, that will execute the specified function when an Observer subscribes to it*/
 func New(tl teardownLogic.TeardownLogic) (Observable, observer.Observer) {
 	next := make(chan interface{})
 
 	return &observable{
-			next: next,
-			tl:   tl,
-		}, &observerToObservable{
-			closed: false,
-			next:   next,
-		}
-
+		next: next,
+		tl:   tl,
+	}, observer.WrapChannel(next)
 }
 
 func (observable *observable) Subscribe(observer observer.Observer) subscriber.Subscriber {
@@ -135,6 +94,39 @@ func Of(items ...interface{}) Observable {
 }
 
 /*Zip will combines multiple Observables to create an Observable whose values are calculated from the values, in order, of each of its input Observables.*/
-func Zip(observables ...observable) Observable {
-	return nil
+func Zip(observables ...Observable) Observable {
+	outObservable, outObserver := New(nil)
+	go func() {
+		size := len(observables)
+		inChannels := make([]<-chan interface{}, size)
+		subs := make([]subscriber.Subscriber, size)
+		for i, inObservable := range observables {
+			c := make(chan interface{})
+			subs[i] = inObservable.Subscribe(observer.WrapChannel(c))
+			inChannels[i] = c
+		}
+
+		for !outObserver.IsClosed() {
+			out := make([]interface{}, size)
+			for i, c := range inChannels {
+				item, ok := <-c
+				if !ok {
+					outObserver.Complete()
+					break
+				}
+				switch item := item.(type) {
+				case error:
+					outObserver.Error(item)
+					break
+				default:
+					out[i] = item
+				}
+			}
+			outObserver.Next(out)
+		}
+		for _, sub := range subs {
+			sub.Unsubscribe()
+		}
+	}()
+	return outObservable
 }

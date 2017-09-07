@@ -156,3 +156,38 @@ func TestObservableInterval(t *testing.T) {
 	assert.Exactly(err.Error(), "None")
 	assert.Exactly(done, "Not")
 }
+
+func TestObservableOf(t *testing.T) {
+	assert := assert.New(t)
+	fin := sync.WaitGroup{}
+	out := make(chan interface{})
+	obOut := observer.WrapChannel(out)
+	values := []interface{}{}
+
+	fin.Add(1)
+	go func(c chan interface{}) {
+		for item := range c {
+			switch item := item.(type) {
+			case error:
+				t.Fatal("Should not output error")
+			default:
+				values = append(values, item)
+			}
+		}
+		fin.Done()
+	}(out)
+
+	o1 := Of(1, 2, 3)
+	o2 := Of(4, 5, 6)
+	o3 := Of(7, 8, 9)
+
+	Zip(o1, o2, o3).Subscribe(obOut)
+	fin.Wait()
+
+	assert.Exactly(values, []interface{}{
+		[]interface{}{1, 4, 7},
+		[]interface{}{2, 5, 8},
+		[]interface{}{3, 6, 9},
+	})
+
+}
