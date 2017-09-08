@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/raininfall/gorx"
+	"github.com/raininfall/gorx/observer"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +31,7 @@ func TestObservableCreate(t *testing.T) {
 	values := []int{}
 	fin.Add(1)
 	go func() {
-		obs := newObserver(0)
+		obs := observer.New(0)
 		oba.Subscribe(obs)
 		for item := range obs.Out() {
 			values = append(values, item.(int))
@@ -69,7 +70,7 @@ func TestObserverUnsubscribe(t *testing.T) {
 	fin.Add(1)
 	go func() {
 		defer fin.Done()
-		obs := newObserver(0)
+		obs := observer.New(0)
 		oba.Subscribe(obs)
 		for item := range obs.Out() {
 			values = append(values, item.(int))
