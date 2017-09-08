@@ -12,15 +12,15 @@ func newObserver() *observer {
 	}
 }
 
-func (o *observer) Next() chan<- interface{} {
+func (o *observer) In() chan<- interface{} {
 	return o.next
 }
 
-func (o *observer) OnNext() <-chan interface{} {
+func (o *observer) Out() <-chan interface{} {
 	return o.next
 }
 
-func (o *observer) Complete() {
+func (o *observer) Close() {
 	close(o.next)
 }
 

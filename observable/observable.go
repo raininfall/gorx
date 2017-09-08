@@ -10,7 +10,7 @@ type observable struct {
 }
 
 func (oba *observable) Subscribe(out rx.InObserver) {
-	channels.Pipe(channels.Wrap(oba.in.OnNext()), channels.NativeInChannel(out.Next()))
+	channels.Pipe(oba.in, out)
 }
 
 /*Create a new Observable, that will execute the specified function when an Observer subscribes to it.*/

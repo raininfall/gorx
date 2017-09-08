@@ -20,10 +20,10 @@ func TestObservableCreate(t *testing.T) {
 	fin.Add(1)
 	go func() {
 		obs := <-cb
-		obs.Next() <- 1
-		obs.Next() <- 2
-		obs.Next() <- 3
-		obs.Complete()
+		obs.In() <- 1
+		obs.In() <- 2
+		obs.In() <- 3
+		obs.Close()
 		fin.Done()
 	}()
 
@@ -32,7 +32,7 @@ func TestObservableCreate(t *testing.T) {
 	go func() {
 		obs := newObserver()
 		oba.Subscribe(obs)
-		for item := range obs.OnNext() {
+		for item := range obs.Out() {
 			values = append(values, item.(int))
 		}
 		fin.Done()

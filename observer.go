@@ -2,14 +2,14 @@ package rx
 
 /*InObserver input side of observer*/
 type InObserver interface {
-	Next() chan<- interface{}
-	Complete()
+	In() chan<- interface{}
+	Close()
 	OnDispose() <-chan bool
 }
 
 /*OutObserver output side of observer*/
 type OutObserver interface {
-	OnNext() <-chan interface{}
+	Out() <-chan interface{}
 	Dispose() chan<- bool
 }
 
