@@ -4,13 +4,13 @@ package rx
 type InObserver interface {
 	In() chan<- interface{}
 	Close()
-	OnDispose() <-chan bool
+	OnUnsubscribe() <-chan bool
 }
 
 /*OutObserver output side of observer*/
 type OutObserver interface {
 	Out() <-chan interface{}
-	Dispose() chan<- bool
+	Unsubscribe()
 }
 
 /*Observer is an interface for a consumer of push-based notifications delivered by an Observable.*/

@@ -14,7 +14,7 @@ func TestObservableCreate(t *testing.T) {
 	fin := &sync.WaitGroup{}
 	numGoroutines := runtime.NumGoroutine()
 
-	cb := make(chan rx.Observer, 1) /*Avoid observable.Create block*/
+	cb := make(chan rx.InObserver, 1) /*Avoid observable.Create block*/
 	oba := Create(cb)
 
 	fin.Add(1)
@@ -48,26 +48,27 @@ func TestObserverUnsubscribe(t *testing.T) {
 	fin := &sync.WaitGroup{}
 	numGoroutines := runtime.NumGoroutine()
 
-	cb := make(chan rx.Observer, 1) /*Avoid observable.Create block*/
+	cb := make(chan rx.InObserver, 1) /*Avoid observable.Create block*/
 	oba := Create(cb)
 
 	fin.Add(1)
 	go func() {
+		defer fin.Done()
 		obs := <-cb
+		defer obs.Close()
 		for i := 1; i > 0; i++ {
 			select {
-			case obs.In() <- i:
 			case <-obs.OnUnsubscribe():
-				obs.Close()
+				return
+			case obs.In() <- i:
 			}
 		}
-		obs.Close()
-		fin.Done()
 	}()
 
 	values := []int{}
 	fin.Add(1)
 	go func() {
+		defer fin.Done()
 		obs := newObserver(0)
 		oba.Subscribe(obs)
 		for item := range obs.Out() {
@@ -77,10 +78,8 @@ func TestObserverUnsubscribe(t *testing.T) {
 				break
 			}
 		}
-		for range obs.Out() {
-		}
+		/*It should be OK not to clean the observer.Out() after Unsubscribe*/
 		assert.Exactly([]int{1, 2, 3}, values)
-		fin.Done()
 	}()
 
 	fin.Wait()

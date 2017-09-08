@@ -1,24 +1,20 @@
 package observable
 
 import (
-	"github.com/raininfall/channels"
 	"github.com/raininfall/gorx"
 )
 
 type observable struct {
-	in *observer
+	onSubscribe chan<- rx.InObserver
 }
 
-func (oba *observable) Subscribe(out rx.Observer) {
-	channels.Pipe(oba.in, out)
+func (oba *observable) Subscribe(out rx.InObserver) {
+	oba.onSubscribe <- out
 }
 
 /*Create a new Observable, that will execute the specified function when an Observer subscribes to it.*/
-func Create(c chan<- rx.Observer) rx.Observable {
-	in := newObserver(10)
-	c <- in
-
+func Create(onSubscribe chan<- rx.InObserver) rx.Observable {
 	return &observable{
-		in: in,
+		onSubscribe: onSubscribe,
 	}
 }

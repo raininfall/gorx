@@ -1,16 +1,8 @@
 package observable
 
 type observer struct {
-	closed  bool
 	next    chan interface{}
 	dispose chan bool
-}
-
-var unsubscribedChannel = make(chan interface{})
-var errorChannel = make(chan interface{})
-
-func init() {
-	close(unsubscribedChannel)
 }
 
 func newObserver(bufSize int) *observer {
@@ -33,7 +25,6 @@ func (o *observer) Close() {
 }
 
 func (o *observer) Unsubscribe() {
-	o.closed = true
 	o.dispose <- true
 }
 
