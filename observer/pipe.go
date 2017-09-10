@@ -27,6 +27,9 @@ func weakPipeImpl(in rx.OutObserver, out rx.InObserver, done chan<- bool) {
 	defer close(done)
 	for {
 		select {
+		case <-out.OnUnsubscribe():
+			in.Unsubscribe()
+			return
 		case item, ok := <-in.Out():
 			if !ok {
 				return
@@ -36,8 +39,6 @@ func weakPipeImpl(in rx.OutObserver, out rx.InObserver, done chan<- bool) {
 			case error:
 				return
 			}
-		case <-out.OnUnsubscribe():
-			in.Unsubscribe()
 		}
 	}
 }
