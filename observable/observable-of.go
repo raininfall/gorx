@@ -5,6 +5,7 @@ import (
 )
 
 type observableOf struct {
+	observable
 	values []interface{}
 }
 
@@ -27,7 +28,10 @@ func (oba *observableOf) Subscribe(out rx.InObserver) {
 
 /*Of a new Observable, that will execute the specified function when an Observer subscribes to it.*/
 func Of(values ...interface{}) rx.Observable {
-	return &observableOf{
+	me := &observableOf{
 		values: values,
 	}
+	me.subscribe = me.Subscribe
+
+	return me
 }

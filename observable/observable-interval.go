@@ -7,6 +7,7 @@ import (
 )
 
 type observableInterval struct {
+	observable
 	d time.Duration
 }
 
@@ -28,7 +29,10 @@ func (oba *observableInterval) Subscribe(out rx.InObserver) {
 
 /*Interval will emit every duration time*/
 func Interval(d time.Duration) rx.Observable {
-	return &observableInterval{
+	me := &observableInterval{
 		d: d,
 	}
+	me.subscribe = me.Subscribe
+
+	return me
 }

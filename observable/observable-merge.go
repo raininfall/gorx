@@ -8,6 +8,7 @@ import (
 )
 
 type observableMerge struct {
+	observable
 	inputs []rx.Observable
 }
 
@@ -54,7 +55,10 @@ func (oba *observableMerge) Subscribe(out rx.InObserver) {
 
 /*Merge all emitter into one observable*/
 func Merge(inputs ...rx.Observable) rx.Observable {
-	return &observableMerge{
+	me := &observableMerge{
 		inputs: inputs,
 	}
+	me.subscribe = me.Subscribe
+
+	return me
 }
