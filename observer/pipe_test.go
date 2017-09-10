@@ -38,6 +38,7 @@ func TestPipeError(t *testing.T) {
 	obs1 := New(0)
 	obs2 := New(0)
 	err := errors.New("Not")
+	done := make(chan bool, 1)
 
 	values := []int{}
 	go func() {
@@ -49,6 +50,7 @@ func TestPipeError(t *testing.T) {
 				values = append(values, v.(int))
 			}
 		}
+		done <- true
 	}()
 
 	go func() {
@@ -60,6 +62,7 @@ func TestPipeError(t *testing.T) {
 	}()
 
 	<-Pipe(obs1, obs2)
+	<-done
 
 	assert.Exactly([]int{1, 2, 3}, values)
 	assert.Exactly(errors.New("Bang"), err)
