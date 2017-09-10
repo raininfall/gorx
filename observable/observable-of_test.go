@@ -3,6 +3,7 @@ package observable
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/raininfall/gorx/observer"
 	"github.com/stretchr/testify/assert"
@@ -48,6 +49,7 @@ func TestObservableOfUnsubscribe(t *testing.T) {
 		}
 		i++
 		if i == 3 {
+			<-time.After(50 * time.Millisecond) /*Give it some time to fill next value*/
 			obs.Unsubscribe()
 		}
 	}
