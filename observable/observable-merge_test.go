@@ -1,6 +1,7 @@
 package observable
 
 import (
+	"errors"
 	"sort"
 	"testing"
 	"time"
@@ -45,4 +46,20 @@ func TestObservableMergeUnsubscribe(t *testing.T) {
 	}
 
 	assert.Exactly([]int{1, 2, 3, 0}, values)
+}
+
+func TestObservableMergeError(t *testing.T) {
+	assert := assert.New(t)
+
+	oba1 := Of(1, 2, 3, errors.New("Bang"))
+	oba2 := Interval(100 * time.Millisecond)
+	obs := observer.New(0)
+	Merge(oba1, oba2).Subscribe(obs)
+
+	values := []interface{}{}
+	for v := range obs.Out() {
+		values = append(values, v)
+	}
+
+	assert.Exactly([]interface{}{1, 2, 3, errors.New("Bang")}, values)
 }
