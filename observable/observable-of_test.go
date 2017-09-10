@@ -52,5 +52,5 @@ func TestObservableOfUnsubscribe(t *testing.T) {
 		}
 	}
 
-	assert.Exactly([]int{1, 2, 3, 4}, values)
+	assert.Exactly([]int{1, 2, 3}, values)
 }
