@@ -11,7 +11,7 @@ type observer struct {
 func New(bufSize int) rx.Observer {
 	return &observer{
 		next:    make(chan interface{}, bufSize),
-		dispose: make(chan bool, 1),
+		dispose: make(chan bool),
 	}
 }
 
@@ -28,7 +28,7 @@ func (o *observer) Close() {
 }
 
 func (o *observer) Unsubscribe() {
-	o.dispose <- true
+	close(o.dispose)
 }
 
 func (o *observer) OnUnsubscribe() <-chan bool {
