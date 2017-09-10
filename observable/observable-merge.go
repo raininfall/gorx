@@ -35,14 +35,16 @@ func (oba *observableMerge) Subscribe(out rx.InObserver) {
 			}
 			cases[0].Chan = reflect.ValueOf(out.OnUnsubscribe())
 			chosen, recv, ok := reflect.Select(cases)
+			/*Unsubscribe*/
+			if chosen == 0 {
+				return
+			}
+			/*One input Observable closed*/
 			if !ok {
 				//It should not be first elem(unsubscribe chan)
 				observers = append(observers[:chosen], observers[chosen+1:]...)
 				cases = append(cases[:chosen], cases[chosen+1:]...)
 				continue
-			}
-			if chosen == 0 {
-				return
 			}
 			out.In() <- recv.Interface()
 			switch recv.Interface().(type) {
