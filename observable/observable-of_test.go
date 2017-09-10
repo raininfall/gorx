@@ -3,7 +3,6 @@ package observable
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/raininfall/gorx/observer"
 	"github.com/stretchr/testify/assert"
@@ -36,6 +35,7 @@ func TestObservableOfUnsubscribe(t *testing.T) {
 	oba := Of(1, 2, 3, 4, 5, errors.New("Bang"), 6, nil)
 	obs := observer.New(0)
 	oba.Subscribe(obs)
+	err := errors.New("Not")
 
 	values := []int{}
 	i := 0
@@ -49,10 +49,9 @@ func TestObservableOfUnsubscribe(t *testing.T) {
 		}
 		i++
 		if i == 3 {
-			<-time.After(50 * time.Millisecond) /*Give it some time to fill next value*/
 			obs.Unsubscribe()
 		}
 	}
 
-	assert.Exactly([]int{1, 2, 3}, values)
+	assert.Exactly(errors.New("Not"), err)
 }
