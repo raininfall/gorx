@@ -32,7 +32,7 @@ func TestObservableOf(t *testing.T) {
 func TestObservableOfUnsubscribe(t *testing.T) {
 	assert := assert.New(t)
 
-	oba := Of(1, 2, 3, errors.New("Bang"), 4, nil)
+	oba := Of(1, 2, 3, 4, 5, errors.New("Bang"), 6, nil)
 	obs := observer.New(0)
 	oba.Subscribe(obs)
 
@@ -52,5 +52,5 @@ func TestObservableOfUnsubscribe(t *testing.T) {
 		}
 	}
 
-	assert.Exactly([]int{1, 2, 3}, values)
+	assert.Exactly([]int{1, 2, 3, 4}, values)
 }
