@@ -1,6 +1,7 @@
 package observable
 
 import (
+	"errors"
 	"sort"
 	"testing"
 
@@ -25,4 +26,15 @@ func TestObservableMergeMap(t *testing.T) {
 
 	sort.Ints(values)
 	assert.Exactly([]int{2, 4, 6}, values)
+}
+
+func TestObservableMergeMapError(t *testing.T) {
+	assert := assert.New(t)
+
+	obs := observer.New(0)
+	Of(1, 2, 3).MergeMap(func(v interface{}) rx.Observable {
+		return Of(errors.New("Bang"))
+	}).Subscribe(obs)
+
+	assert.Exactly(errors.New("Bang"), <-obs.Out())
 }
