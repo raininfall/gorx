@@ -32,8 +32,8 @@ func TestObservableMergeMapError(t *testing.T) {
 	assert := assert.New(t)
 
 	obs := observer.New(0)
-	Of(1, 2, 3).MergeMap(func(v interface{}) rx.Observable {
-		return Of(errors.New("Bang"))
+	Of(errors.New("Bang"), 1, 2, 3).MergeMap(func(v interface{}) rx.Observable {
+		return Of(v)
 	}).Subscribe(obs)
 
 	assert.Exactly(errors.New("Bang"), <-obs.Out())
